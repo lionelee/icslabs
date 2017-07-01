@@ -1,0 +1,245 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len ints to dst.
+# Return the number of positive ints (>0) contained in src.
+#
+# Name: Li Xinyu
+# Student ID: 515030910292
+#
+# Modification:
+# 1. using iaddl instead of irmovl & addl
+# 2. unroll loop in 16-way
+# 3. modify hcl to realize forwarding between mrmovl & rmmvol, pushl to avoid bubbles   
+# 4. using jumptable method--when dealing with remaining elements, using pushl and ret
+#    to realize instruction jmp *%edx and execute without needless jmping to avoid bubbles
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+ncopy:	pushl %ebp				# Save old frame pointer
+		rrmovl %esp,%ebp		# Set up new frame pointer
+		pushl %esi				# Save callee-save regs
+		pushl %ebx
+		pushl %edi
+		mrmovl 8(%ebp),%ebx		# src
+		mrmovl 16(%ebp),%edx	# len
+		mrmovl 12(%ebp),%ecx	# dst
+##################################################################
+# You can modify this portion
+		xorl %eax, %eax			# count = 0; 
+		#andl %edx, %edx			# len > 0?
+		#jg Loop					# if so, goto Loop:
+		#jmp Done				# else goto Done:
+Loop:  	iaddl $-16, %edx        # len >= 16?
+        jge Bigger              # if so, goto Bigger:
+        #deal with remaining elements
+Less:	addl %edx, %edx			# len = a-16 when length is 16k + a
+		addl %edx, %edx			#
+		mrmovl End(%edx), %esi	# len = Rema + 4a (End == Rema + 16*4)
+		pushl %esi
+		ret
+Bigger: #unroll 1
+		mrmovl (%ebx), %esi	# read val from src...
+        mrmovl 4(%ebx), %edi	# read val from src...
+        rmmovl %esi, (%ecx)  	# ...and store it to dst
+		rmmovl %edi, 4(%ecx)  	# ...and store it to dst
+		andl %esi, %esi			# val > 0?
+		jle U2
+		iaddl $1, %eax
+        #unroll	2
+U2:		andl %edi, %edi			# val > 0?
+		jle U3
+		iaddl  $1, %eax
+		#unroll 3
+U3:		mrmovl 8(%ebx), %esi	# read val from src...
+		mrmovl 12(%ebx), %edi	# read val from src...
+		rmmovl %esi, 8(%ecx)	# ...and store it to dst
+		rmmovl %edi, 12(%ecx)  	# ...and store it to dst
+		andl %esi, %esi			# val > 0?
+		jle U4
+		iaddl $1, %eax
+		#unroll 4
+U4:		andl %edi, %edi			# val > 0?
+		jle U5
+		iaddl  $1, %eax
+		#unroll 5
+U5:		mrmovl 16(%ebx), %esi	# read val from src...
+		mrmovl 20(%ebx), %edi	# read val from src...
+		rmmovl %esi, 16(%ecx)	# ...and store it to dst
+		rmmovl %edi, 20(%ecx)  	# ...and store it to dst     
+		andl %esi, %esi			# val > 0?
+		jle U6
+		iaddl $1, %eax
+		#unroll 6
+U6:		andl %edi, %edi			# val > 0?
+		jle U7
+		iaddl  $1, %eax
+		#unroll 7
+U7:		mrmovl 24(%ebx), %esi	# read val from src...
+		mrmovl 28(%ebx), %edi	# read val from src...
+		rmmovl %esi, 24(%ecx)	# ...and store it to dst
+		rmmovl %edi, 28(%ecx)  	# ...and store it to dst     
+		andl %esi, %esi			# val > 0?
+		jle U8
+		iaddl $1, %eax
+		#unroll 8
+U8:		andl %edi, %edi			# val > 0?
+		jle U9
+		iaddl  $1, %eax
+		#unroll 9
+U9:		mrmovl 32(%ebx), %esi	# read val from src...
+		mrmovl 36(%ebx), %edi	# read val from src...
+		rmmovl %esi, 32(%ecx)	# ...and store it to dst
+		rmmovl %edi, 36(%ecx)  	# ...and store it to dst     
+		andl %esi, %esi			# val > 0?
+		jle U10
+		iaddl $1, %eax
+		#unroll 8
+U10:	andl %edi, %edi			# val > 0?
+		jle U11
+		iaddl  $1, %eax
+		#unroll 11
+U11:	mrmovl 40(%ebx), %esi	# read val from src...
+		mrmovl 44(%ebx), %edi	# read val from src...
+		rmmovl %esi, 40(%ecx)	# ...and store it to dst
+		rmmovl %edi, 44(%ecx)  	# ...and store it to dst     
+		andl %esi, %esi			# val > 0?
+		jle U12
+		iaddl $1, %eax
+		#unroll 8
+U12:	andl %edi, %edi			# val > 0?
+		jle U13
+		iaddl $1, %eax
+		#unroll 13
+U13:	mrmovl 48(%ebx), %esi	# read val from src...
+		mrmovl 52(%ebx), %edi	# read val from src...
+		rmmovl %esi, 48(%ecx)	# ...and store it to dst
+		rmmovl %edi, 52(%ecx)  	# ...and store it to dst     
+		andl %esi, %esi			# val > 0?
+		jle U14
+		iaddl $1, %eax
+		#unroll 14
+U14:	andl %edi, %edi			# val > 0?
+		jle U15
+		iaddl $1, %eax
+		#unroll 15
+U15:	mrmovl 56(%ebx), %esi	# read val from src...
+		mrmovl 60(%ebx), %edi	# read val from src...
+		rmmovl %esi, 56(%ecx)	# ...and store it to dst
+		rmmovl %edi, 60(%ecx)  	# ...and store it to dst     
+		andl %esi, %esi			# val > 0?
+		jle U16
+		iaddl $1, %eax
+		#unroll 16
+U16:	andl %edi, %edi			# val > 0?
+		jle Npos
+		iaddl $1, %eax
+Npos:	iaddl $64, %ebx			# src++
+		iaddl $64, %ecx 		# dst++ 
+		jmp Loop
+Rema15:	mrmovl 56(%ebx), %esi
+		rmmovl %esi, 56(%ecx)
+		andl %esi, %esi
+		jle Rema14
+		iaddl $1, %eax
+Rema14:	mrmovl 52(%ebx),%edi	
+		rmmovl %edi, 52(%ecx)
+		andl %edi, %edi
+		jle Rema13
+		iaddl $1, %eax
+Rema13:	mrmovl 48(%ebx), %esi
+		rmmovl %esi, 48(%ecx)
+		andl %esi, %esi
+		jle Rema12
+		iaddl $1, %eax
+Rema12:	mrmovl 44(%ebx),%edi
+		rmmovl %edi, 44(%ecx)
+		andl %edi, %edi
+		jle Rema11
+		iaddl $1, %eax
+Rema11:	mrmovl 40(%ebx), %esi
+		rmmovl %esi, 40(%ecx)
+		andl %esi, %esi
+		jle Rema10
+		iaddl $1, %eax
+Rema10:	mrmovl 36(%ebx),%edi
+		rmmovl %edi, 36(%ecx)
+		andl %edi, %edi
+		jle Rema9
+ 		iaddl $1, %eax
+Rema9:	mrmovl 32(%ebx), %esi
+		rmmovl %esi, 32(%ecx)
+		andl %esi, %esi
+		jle Rema8
+		iaddl $1, %eax
+Rema8:	mrmovl 28(%ebx),%edi
+		rmmovl %edi, 28(%ecx)
+		andl %edi, %edi
+		jle Rema7
+		iaddl $1, %eax
+Rema7:	mrmovl 24(%ebx), %esi
+		rmmovl %esi, 24(%ecx)
+		andl %esi, %esi
+		jle Rema6
+		iaddl $1, %eax
+Rema6:	mrmovl 20(%ebx),%edi
+		rmmovl %edi, 20(%ecx)
+		andl %edi, %edi
+		jle Rema5
+		iaddl $1, %eax
+Rema5:	mrmovl 16(%ebx), %esi
+		rmmovl %esi, 16(%ecx)
+		andl %esi, %esi
+		jle Rema4
+		iaddl $1, %eax
+Rema4:	mrmovl 12(%ebx),%edi
+		rmmovl %edi, 12(%ecx)
+		andl %edi, %edi
+		jle Rema3
+		iaddl $1, %eax
+Rema3:	mrmovl 8(%ebx), %esi
+		rmmovl %esi, 8(%ecx)
+		andl %esi, %esi
+		jle Rema2
+		iaddl $1, %eax
+Rema2:	mrmovl 4(%ebx),%edi
+		rmmovl %edi, 4(%ecx)
+		andl %edi, %edi
+		jle Rema1
+		iaddl $1, %eax
+Rema1:	mrmovl (%ebx),%esi
+		rmmovl %esi, (%ecx)
+		andl %esi, %esi
+		jle Done
+		iaddl $1, %eax
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	popl %edi               # Restore callee-save registers
+	popl %ebx
+	popl %esi
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret
+##################################################################
+.align 4
+Rema:	.long Done	
+		.long Rema1
+		.long Rema2
+		.long Rema3
+		.long Rema4
+		.long Rema5
+		.long Rema6
+		.long Rema7
+		.long Rema8
+		.long Rema9
+		.long Rema10
+		.long Rema11
+		.long Rema12
+		.long Rema13
+		.long Rema14	
+		.long Rema15
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */

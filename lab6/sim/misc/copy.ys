@@ -1,0 +1,52 @@
+#Name: Li Xinyu
+#Student ID: 515030910292
+
+#execution begins at address 0
+.pos 0
+Main:       irmovl Stack, %esp      #set up stack pointer
+            rrmovl %esp, %ebp       #set up base pointer
+            irmovl 3, %edx
+            pushl %edx              #pushl len
+            irmovl dest, %edx
+            pushl %edx              #pushl *src
+            irmovl src, %edx
+            pushl %edx              #pushl *Destination
+            call copy_block         #copy_block(src, dest, len)
+            halt
+
+.align 4
+# Source block
+src:
+    .long 0x00a
+    .long 0x0b0
+    .long 0xc00
+#Destination block
+dest:
+    .long 0x111
+    .long 0x222
+    .long 0x333
+
+copy_block: pushl %ebp
+            rrmovl %esp, %ebp
+            xorl %eax, %eax         #result = 0
+            mrmovl 8(%ebp), %ecx
+            mrmovl 0xc(%ebp),%edx  
+            mrmovl 0x10(%ebp),%ebx
+Loop:       andl %ebx, %ebx
+            je End
+            mrmovl 0(%ecx), %esi    #val = *src
+            rmmovl %esi, 0(%edx)    #*dest = val
+            xorl %esi, %eax         #result ^= val
+            irmovl 1, %edi          #
+            subl %edi, %ebx         #len--
+            irmovl 4, %edi          #
+            addl %edi, %ecx         #src++
+            addl %edi, %edx         #dest++
+            jmp Loop
+End:        leave
+            ret
+
+#The stack starts from here and grows to lower address
+.pos 0x100
+Stack :
+
